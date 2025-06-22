@@ -33,20 +33,20 @@ export default function EditTodoModal({
 				<div className='mt-6 flex justify-end gap-4'>
 					<button
 						onClick={onSave}
-						className='px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition'
+						className='px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition cursor-pointer'
 					>
 						Save
 					</button>
 					<button
 						onClick={onCancel}
-						className='px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition'
+						className='px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition cursor-pointer'
 					>
 						Cancel
 					</button>
 				</div>
 				<button
 					onClick={onCancel}
-					className='absolute top-4 right-4  hover:text-red-600 transition text-xl text-red-500 font-bold'
+					className='absolute top-4 right-4  hover:text-red-600 transition text-xl text-red-500 font-bold cursor-pointer'
 					aria-label='Close modal'
 				>
 					&#10005;
