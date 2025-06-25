@@ -4,6 +4,7 @@ import {
 	addTodo,
 	deleteTodo,
 	fetchTodos,
+	searchTodos,
 	toggleTodo,
 	updateTodoTitle
 } from '@/actions/todos/action';
@@ -26,13 +27,34 @@ export default function Todos() {
 	const [editingId, setEditingId] = useState<number | null>(null);
 	const [editingTitle, setEditingTitle] = useState('');
 
+	// Load/fetch all todos on component mount
 	useEffect(() => {
-		(async () => {
+		async function loadTodos() {
 			const data = await fetchTodos();
 			setTodos(data);
-		})();
+		}
+		loadTodos();
 	}, []);
 
+	// When search query changes, call backend search with debounce
+	useEffect(() => {
+		const delayDebounce = setTimeout(async () => {
+			if (searchQuery.trim() === '') {
+				// If search is empty, fetch all todos
+				const data = await fetchTodos();
+				setTodos(data);
+				return;
+			}
+
+			// Perform backend search with the query
+			const searched = await searchTodos(searchQuery);
+			setTodos(searched);
+		}, 300); // 300ms debounce delay
+
+		return () => clearTimeout(delayDebounce); // Cleanup timeout on new searchQuery
+	}, [searchQuery]);
+
+	// Handle adding a new todo
 	const handleAdd = async () => {
 		if (!newTitle.trim()) {
 			setError('Title is required');
@@ -46,6 +68,7 @@ export default function Todos() {
 		setLoading(false);
 	};
 
+	// Toggle completed status of a todo
 	const handleToggle = async (todo: Todo) => {
 		await toggleTodo(todo.id, !todo.completed);
 		setTodos(
@@ -55,21 +78,25 @@ export default function Todos() {
 		);
 	};
 
+	// Delete a todo by id
 	const handleDelete = async (id: number) => {
 		await deleteTodo(id);
 		setTodos(todos.filter(t => t.id !== id));
 	};
 
+	// Start editing a todo's title
 	const startEditing = (todo: Todo) => {
 		setEditingId(todo.id);
 		setEditingTitle(todo.title);
 	};
 
+	// Cancel editing mode
 	const cancelEditing = () => {
 		setEditingId(null);
 		setEditingTitle('');
 	};
 
+	// Save edited todo title
 	const saveEditing = async () => {
 		if (!editingTitle.trim() || editingId === null) return;
 		const updated = await updateTodoTitle(
@@ -80,52 +107,52 @@ export default function Todos() {
 		cancelEditing();
 	};
 
-	const filteredTodos = todos.filter(todo =>
-		todo.title.toLowerCase().includes(searchQuery.toLowerCase())
-	);
-
 	return (
-		<div className='mt-10 rounded-2xl p-4 max-w-xl mx-auto'>
+		<div className='h-screen overflow-hidden min-w-150 mx-auto rounded-2xl p-4'>
 			<h1 className='text-4xl font-bold text-center text-indigo-600 mb-8'>
 				Todo App
 			</h1>
 
-			{/* Search Field */}
-			<input
-				type='text'
-				placeholder='Search tasks...'
-				value={searchQuery}
-				onChange={e => setSearchQuery(e.target.value)}
-				className='w-full mb-4 p-3 rounded-xl border border-indigo-200 text-gray-700 placeholder:text-indigo-400 focus:outline-none focus:ring-0 transition'
-			/>
-
-			{error && <p className='text-sm text-red-500 mb-4'>{error}</p>}
-
-			{/* Add New Todo */}
-			<div className='flex items-center gap-4 mb-8'>
+			<div className='max-w-100 mx-auto space-y-6'>
+				{/* Search Input */}
 				<input
 					type='text'
-					placeholder='Enter your task...'
-					value={newTitle}
-					onChange={e => setNewTitle(e.target.value)}
-					className='flex-grow p-3 rounded-xl border-2 border-indigo-200 text-gray-700 placeholder:text-indigo-400 focus:outline-none focus:ring-0 transition disabled:opacity-50'
-					disabled={loading}
+					placeholder='Search tasks...'
+					value={searchQuery}
+					onChange={e => setSearchQuery(e.target.value)}
+					className='w-full h-12 px-3 rounded-xl border border-indigo-200 text-gray-700 placeholder:text-indigo-400 focus:outline-none focus:ring-0 transition shadow'
 				/>
-				<button
-					onClick={handleAdd}
-					disabled={loading}
-					className='px-5 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition disabled:opacity-50 cursor-pointer'
-				>
-					Add
-				</button>
-			</div>
 
+				{/* Add New Todo */}
+				<div className='flex items-center h-12 mb-8 border border-indigo-200 rounded-xl shadow overflow-hidden'>
+					<input
+						type='text'
+						placeholder='Enter your task...'
+						value={newTitle}
+						onChange={e => setNewTitle(e.target.value)}
+						className='flex-grow p-3 text-gray-700 placeholder:text-indigo-400 focus:outline-none focus:ring-0 transition disabled:opacity-50'
+						disabled={loading}
+					/>
+					<button
+						onClick={handleAdd}
+						disabled={loading}
+						className=' h-full px-5 bg-indigo-600 text-white font-medium  hover:bg-indigo-700 transition disabled:opacity-50 cursor-pointer'
+					>
+						Add
+					</button>
+				</div>
+			</div>
+			{error && (
+				<p className='absolute top-56 inset-x-0 text-sm text-center text-red-500 '>
+					{error}
+				</p>
+			)}
 			{/* Todo List */}
-			<ul className='space-y-6'>
-				{filteredTodos.map(todo => (
+			<ul className='space-y-6 h-[calc(100vh-18rem)] overflow-hidden overflow-y-auto py-4 mt-10'>
+				{todos.map(todo => (
 					<li
 						key={todo.id}
-						className='bg-indigo-50 p-4 rounded-xl shadow-sm hover:shadow-md transition'
+						className='bg-gray-50 p-4 rounded-xl shadow-sm hover:shadow-md transition'
 					>
 						<div className='flex justify-between items-center'>
 							<span
